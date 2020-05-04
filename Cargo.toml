@@ -1,0 +1,16 @@
+[package]
+name = "p50x"
+version = "0.1.0"
+authors = ["MarkAtk"]
+edition = "2018"
+license = "MIT"
+repository = "https://github.com/markatk/p50x-rs.git"
+readme = "README.md"
+keywords = ["p50x", "serial"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[badges]
+travis-ci = { repository = "markatk/p50x-rs" }
+
+[dependencies]
