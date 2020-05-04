@@ -13,4 +13,8 @@ keywords = ["p50x", "serial"]
 [badges]
 travis-ci = { repository = "markatk/p50x-rs" }
 
+[[example]]
+name = "example"
+
 [dependencies]
+serial-unit-testing = { version = "0.2.2", default-features = false }

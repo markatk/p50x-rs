@@ -1,5 +1,5 @@
 /*
- * File: lib.rs
+ * File: example.rs
  * Date: 04.05.2020
  * Author: MarkAtk
  * 
@@ -26,16 +26,13 @@
  * SOFTWARE.
  */
 
-mod error;
-mod device;
+fn main() {
+    let port_name = "/dev/ttyACM1";
+    let baud_rate = 9600;
 
-pub use error::*;
-pub use device::*;
+    println!("Connecting to {} with {} baud...", port_name, baud_rate);
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+    let device = p50x::Device::new(port_name, baud_rate).expect("Device could not be created");
+
+    println!("P50X device detected");
 }

@@ -1,5 +1,5 @@
 /*
- * File: lib.rs
+ * File: device.rs
  * Date: 04.05.2020
  * Author: MarkAtk
  * 
@@ -26,16 +26,47 @@
  * SOFTWARE.
  */
 
-mod error;
-mod device;
+use serial_unit_testing::serial::*;
+use serial_unit_testing::utils::TextFormat;
 
-pub use error::*;
-pub use device::*;
+use crate::error::*;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+pub struct Device {
+    serial: Serial,
+    check_settings: CheckSettings
+}
+
+impl Device {
+    pub fn new(port_name: &str, baud_rate: u32) -> Result<Device> {
+        let settings = settings::Settings {
+            baud_rate,
+            timeout: 1000,
+            ..Default::default()
+        };
+
+        let mut serial = Serial::open_with_settings(port_name, &settings)?;
+
+        // verify device is p50x device
+        let check_settings = CheckSettings {
+            ignore_case: true,
+            input_format: TextFormat::Hex,
+            output_format: TextFormat::Hex
+        };
+
+        let verified = Device::verify_connection(&mut serial, &check_settings)?;
+        if verified == false {
+            return Err(Error::UnknownDevice);
+        }
+
+        return Ok(Device {
+            serial,
+            check_settings
+        });
+    }
+
+    fn verify_connection(serial: &mut Serial, check_settings: &CheckSettings) -> Result<bool> {
+        let (result, _) = serial.check_with_settings("58C4", "00", check_settings)?;
+
+        return Ok(result);
     }
 }

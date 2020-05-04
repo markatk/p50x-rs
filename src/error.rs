@@ -1,5 +1,5 @@
 /*
- * File: lib.rs
+ * File: error.rs
  * Date: 04.05.2020
  * Author: MarkAtk
  * 
@@ -26,16 +26,50 @@
  * SOFTWARE.
  */
 
-mod error;
-mod device;
+use std::error::Error as StdError;
+use std::fmt::{self, Display, Formatter};
+use std::convert::From;
+use serial_unit_testing::error::Error as SerialError;
 
-pub use error::*;
-pub use device::*;
+pub type Result<T> = std::result::Result<T, Error>;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+#[derive(Debug)]
+pub enum Error {
+    UnknownDevice,
+    Serial(SerialError),
+    Other
+}
+
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            Error::UnknownDevice => write!(f, "Unknown device"),
+            Error::Serial(ref cause) => write!(f, "Serial Error: {}", cause.description()),
+            Error::Other => write!(f, "Unknown error")
+        }
+    }
+}
+
+impl StdError for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::UnknownDevice => "Unknown analyzer device",
+            Error::Serial(ref cause) => cause.description(),
+            Error::Other => "Unknown error"
+        }
+    }
+
+    fn cause(&self) -> Option<&dyn StdError> {
+        match *self {
+            Error::Serial(ref cause) => Some(cause),
+            _ => None
+        }
+    }
+}
+
+impl From<SerialError> for Error {
+    fn from(cause: SerialError) -> Error {
+        Error::Serial(cause)
     }
 }
