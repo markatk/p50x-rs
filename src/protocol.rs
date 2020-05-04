@@ -1,5 +1,5 @@
 /*
- * File: lib.rs
+ * File: protocol.rs
  * Date: 04.05.2020
  * Author: MarkAtk
  *
@@ -26,18 +26,24 @@
  * SOFTWARE.
  */
 
-mod error;
-mod device;
-mod protocol;
+use crate::Result;
 
-pub use error::*;
-pub use protocol::*;
-pub use device::*;
+#[derive(Debug)]
+pub struct DeviceStatus {
+    pub stop_pressed: bool,
+    pub go_pressed: bool,
+    pub hot: bool,
+    pub power: bool,
+    pub halt: bool,
+    pub external_central_unit: bool,
+    pub voltage_regulation: bool
+}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+pub trait P50X {
+    fn xpower_off(&mut self) -> Result<()>;
+    fn xpower_on(&mut self) -> Result<bool>;
+    fn xhalt(&mut self) -> Result<()>;
+    fn xversion(&mut self) -> Result<Vec<u8>>;
+    fn xstatus(&mut self) -> Result<DeviceStatus>;
+    fn xnop(&mut self) -> Result<()>;
 }
