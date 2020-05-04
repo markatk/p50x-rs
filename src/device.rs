@@ -28,9 +28,11 @@
 
 use serial_unit_testing::serial::*;
 use serial_unit_testing::utils::{TextFormat, bytes_from_hex_string, radix_string};
+use safe_transmute::guarded_transmute_to_bytes_pod;
 
 use crate::error::*;
 use crate::protocol::*;
+use crate::P50XReply;
 
 pub struct Device {
     serial: Serial,
@@ -121,7 +123,7 @@ impl P50X for Device {
         match result {
             true => Ok(true),
             false => {
-                if  response.is_empty() == false && response[0] == 0x06 {
+                if response.is_empty() == false && response[0] == 0x06 {
                     Ok(false)
                 } else {
                     let response_str = radix_string(&response, &TextFormat::Hex)?;
@@ -143,6 +145,35 @@ impl P50X for Device {
                 Err(Error::UnknownResponse(response_str))
             }
         }
+    }
+
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()> {
+        let address = guarded_transmute_to_bytes_pod::<u16>(&special_option);
+        let (result, response) = self.xcommand(&[&[0xa3], address, &[value]].concat(), &[0x00])?;
+
+        match result {
+            true => Ok(()),
+            false => {
+                if response.is_empty() == false && (response[0] == P50XReply::BadParameter as u8 || response[0] == P50XReply::BadSpecialOptionValue as u8) {
+                    Err(Error::Reply(response[0].into()))
+                } else {
+                    let response_str = radix_string(&response, &TextFormat::Hex)?;
+
+                    Err(Error::UnknownResponse(response_str))
+                }
+            }
+        }
+    }
+
+    fn xso_get(&mut self, special_option: u16) -> Result<u8> {
+        let address = guarded_transmute_to_bytes_pod::<u16>(&special_option);
+        let data = self.xsend(&[&[0xa4], address].concat())?;
+
+        if data[0] != 0x00 || data.len() < 2 {
+            return Err(Error::Reply(data[0].into()));
+        }
+
+        return Ok(data[1]);
     }
 
     fn xversion(&mut self) -> Result<Vec<u8>> {

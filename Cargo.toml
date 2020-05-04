@@ -18,3 +18,4 @@ name = "example"
 
 [dependencies]
 serial-unit-testing = { version = "0.2.2", default-features = false }
+safe-transmute = "0.10.1"

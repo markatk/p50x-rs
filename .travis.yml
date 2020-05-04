@@ -21,6 +21,11 @@ matrix:
     - rust: nightly
   fast_finish: true
 
+addons:
+  apt:
+    packages:
+      - libudev-dev
+
 before_script:
 - if [[ "$TRAVIS_OS_NAME" = "linux" && "$TRAVIS_RUST_VERSION" = "stable" ]]; then cargo install --force cargo-audit; fi
 

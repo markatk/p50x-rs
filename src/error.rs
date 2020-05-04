@@ -31,6 +31,8 @@ use std::fmt::{self, Display, Formatter};
 use std::convert::From;
 use serial_unit_testing::error::Error as SerialError;
 
+use crate::reply::P50XReply;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -38,6 +40,7 @@ pub enum Error {
     UnknownDevice,
     Serial(SerialError),
     UnknownResponse(String),
+    Reply(P50XReply),
     Other
 }
 
@@ -48,6 +51,7 @@ impl Display for Error {
             Error::UnknownDevice => write!(f, "Unknown device"),
             Error::Serial(ref cause) => write!(f, "Serial Error: {}", cause.description()),
             Error::UnknownResponse(ref cause) => write!(f, "Unknown response: {}", cause),
+            Error::Reply(ref cause) => write!(f, "P50X Reply: {:?}", cause),
             Error::Other => write!(f, "Unknown error")
         }
     }
@@ -59,6 +63,7 @@ impl StdError for Error {
             Error::UnknownDevice => "Unknown analyzer device",
             Error::Serial(ref cause) => cause.description(),
             Error::UnknownResponse(_) => "Unkonwn response",
+            Error::Reply(_) => "P50X Reply",
             Error::Other => "Unknown error"
         }
     }
@@ -74,5 +79,11 @@ impl StdError for Error {
 impl From<SerialError> for Error {
     fn from(cause: SerialError) -> Error {
         Error::Serial(cause)
+    }
+}
+
+impl From<P50XReply> for Error {
+    fn from(cause: P50XReply) -> Error {
+        Error::Reply(cause)
     }
 }

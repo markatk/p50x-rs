@@ -26,10 +26,12 @@
  * SOFTWARE.
  */
 
+mod reply;
 mod error;
 mod device;
 mod protocol;
 
+pub use reply::*;
 pub use error::*;
 pub use protocol::*;
 pub use device::*;

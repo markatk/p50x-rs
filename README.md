@@ -6,7 +6,7 @@
 
 # Description
 
-P50X protocol communication library written in rust.
+P50X protocol communication library written in rust. Implementation is according to [P50X documentation](https://wiki.rocrail.net/doku.php?id=ib:p50x).
 
 # License
 

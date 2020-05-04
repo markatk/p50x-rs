@@ -43,6 +43,8 @@ pub trait P50X {
     fn xpower_off(&mut self) -> Result<()>;
     fn xpower_on(&mut self) -> Result<bool>;
     fn xhalt(&mut self) -> Result<()>;
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()>;
+    fn xso_get(&mut self, special_option: u16) -> Result<u8>;
     fn xversion(&mut self) -> Result<Vec<u8>>;
     fn xstatus(&mut self) -> Result<DeviceStatus>;
     fn xnop(&mut self) -> Result<()>;

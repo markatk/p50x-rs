@@ -53,4 +53,7 @@ fn main() {
 
     let status = device.xstatus().unwrap();
     println!("Device status {:?}", status);
+
+    let so = device.xso_get(1).unwrap();
+    println!("Device baud config {}", so);
 }
