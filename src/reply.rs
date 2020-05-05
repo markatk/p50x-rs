@@ -28,7 +28,7 @@
 
 use std::convert::From;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[repr(u8)]
 pub enum P50XReply {
     Ok = 0x00,

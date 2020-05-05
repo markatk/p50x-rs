@@ -39,7 +39,7 @@ pub struct DeviceStatus {
     pub voltage_regulation: bool
 }
 
-pub trait P50X {
+pub trait P50XBinary {
     fn xpower_off(&mut self) -> Result<()>;
     fn xpower_on(&mut self) -> Result<bool>;
     fn xhalt(&mut self) -> Result<()>;

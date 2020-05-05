@@ -37,7 +37,8 @@ use crate::P50XReply;
 pub struct Device {
     serial: Serial,
     check_settings: CheckSettings,
-    extended_character: u8
+    extended_character: u8,
+    read_buffer: Vec<u8>
 }
 
 impl Device {
@@ -65,28 +66,92 @@ impl Device {
         return Ok(Device {
             serial,
             check_settings,
-            extended_character: 0x58
+            extended_character: 0x58,
+            read_buffer: Vec::new()
         });
     }
 
-    fn xsend(&mut self, data: &[u8]) -> Result<Vec<u8>> {
-        let request = self.build_request(data)?;
+    pub fn send_u8(&mut self, value: u8) -> Result<()> {
+        let request = radix_string(&[value], &self.check_settings.input_format)?;
         self.serial.write_format(&request, self.check_settings.input_format)?;
 
-        let response = self.serial.read_str_with_format(self.check_settings.output_format)?;
-        let response_data = bytes_from_hex_string(&response)?;
-
-        return Ok(response_data);
+        return Ok(());
     }
 
-    fn xcommand(&mut self, data: &[u8], desired_data: &[u8]) -> Result<(bool, Vec<u8>)> {
-        let request = self.build_request(data)?;
-        let desired_response = radix_string(desired_data, &self.check_settings.input_format)?;
+    pub fn send_u16(&mut self, value: u16) -> Result<()> {
+        let data = guarded_transmute_to_bytes_pod::<u16>(&value);
+        let request = radix_string(data, &self.check_settings.input_format)?;
+        self.serial.write_format(&request, self.check_settings.input_format)?;
 
-        let (result, actual_response) = self.serial.check_with_settings(&request, &desired_response, &self.check_settings)?;
-        let actual_response_data = bytes_from_hex_string(&actual_response)?;
+        return Ok(());
+    }
 
-        return Ok((result, actual_response_data));
+    pub fn send_u32(&mut self, value: u32) -> Result<()> {
+        let data = guarded_transmute_to_bytes_pod::<u32>(&value);
+        let request = radix_string(data, &self.check_settings.input_format)?;
+        self.serial.write_format(&request, self.check_settings.input_format)?;
+
+        return Ok(());
+    }
+
+    pub fn send_x(&mut self) -> Result<()> {
+        self.send_u8(self.extended_character)
+    }
+
+    pub fn recv(&mut self, length: usize) -> Result<Vec<u8>> {
+        // if requested data is already completely read
+        if self.read_buffer.len() >= length {
+            let mut data: Vec<u8> = Vec::new();
+
+            for _ in 0..length {
+                data.push(self.read_buffer[0]);
+                self.read_buffer.remove(0);
+            }
+
+            return Ok(data);
+        }
+
+        let actual_length = length - self.read_buffer.len();
+
+        let response = self.serial.read_min_str_with_format(actual_length, self.check_settings.output_format)?;
+        let mut data = bytes_from_hex_string(&response)?;
+
+        // insert read_buffer
+        if self.read_buffer.is_empty() && data.len() > length {
+            self.read_buffer = data.split_off(length);
+        } else if self.read_buffer.is_empty() == false {
+            for i in 0..self.read_buffer.len() {
+                data.insert(i, self.read_buffer[i]);
+            }
+        }
+
+        return Ok(data);
+    }
+
+    pub fn recv_u8(&mut self) -> Result<u8> {
+        let data = self.recv(1)?;
+
+        return Ok(data[0]);
+    }
+
+    pub fn recv_reply(&mut self) -> Result<P50XReply> {
+        let data = self.recv_u8()?;
+
+        return Ok(data.into());
+    }
+
+    pub fn xrecv(&mut self, valid_responses: &[P50XReply]) -> Result<P50XReply> {
+        let response = self.recv_reply()?;
+
+        if valid_responses.contains(&response) == false {
+            return Err(Error::from(response));
+        }
+
+        return Ok(response);
+    }
+
+    pub fn xrecv_ok(&mut self) -> Result<P50XReply> {
+        self.xrecv(&[P50XReply::Ok])
     }
 
     fn verify_connection(serial: &mut Serial, check_settings: &CheckSettings) -> Result<bool> {
@@ -95,117 +160,103 @@ impl Device {
 
         return Ok(result && xresult);
     }
-
-    fn build_request(&self, data: &[u8]) -> Result<String> {
-        let request = radix_string(&[&[self.extended_character], data].concat(), &self.check_settings.input_format)?;
-
-        return Ok(request);
-    }
 }
 
-impl P50X for Device {
+impl P50XBinary for Device {
     fn xpower_off(&mut self) -> Result<()> {
-        let (result, response) = self.xcommand(&[0xa6], &[0x00])?;
+        self.send_x()?;
+        self.send_u8(0xa6)?;
 
-        match result {
-            true => Ok(()),
-            false => {
-                let response_str = radix_string(&response, &TextFormat::Hex)?;
+        self.xrecv_ok()?;
 
-                Err(Error::UnknownResponse(response_str))
-            }
-        }
+        return Ok(());
     }
 
     fn xpower_on(&mut self) -> Result<bool> {
-        let (result, response) = self.xcommand(&[0xa7], &[0x00])?;
+        self.send_x()?;
+        self.send_u8(0xa7)?;
 
-        match result {
-            true => Ok(true),
-            false => {
-                if response.is_empty() == false && response[0] == 0x06 {
-                    Ok(false)
-                } else {
-                    let response_str = radix_string(&response, &TextFormat::Hex)?;
+        let response = self.xrecv(&[P50XReply::Ok, P50XReply::PowerOff])?;
 
-                    Err(Error::UnknownResponse(response_str))
-                }
-            }
-        }
+        return Ok(response == P50XReply::Ok);
     }
 
     fn xhalt(&mut self) -> Result<()> {
-        let (result, response) = self.xcommand(&[0xa5], &[0x00])?;
+        self.send_x()?;
+        self.send_u8(0xa5)?;
 
-        match result {
-            true => Ok(()),
-            false => {
-                let response_str = radix_string(&response, &TextFormat::Hex)?;
+        self.xrecv_ok()?;
 
-                Err(Error::UnknownResponse(response_str))
-            }
-        }
+        return Ok(());
     }
 
     fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()> {
-        let address = guarded_transmute_to_bytes_pod::<u16>(&special_option);
-        let (result, response) = self.xcommand(&[&[0xa3], address, &[value]].concat(), &[0x00])?;
+        self.send_x()?;
+        self.send_u8(0xa3)?;
+        self.send_u16(special_option)?;
+        self.send_u8(value)?;
 
-        match result {
-            true => Ok(()),
-            false => {
-                if response.is_empty() == false && (response[0] == P50XReply::BadParameter as u8 || response[0] == P50XReply::BadSpecialOptionValue as u8) {
-                    Err(Error::Reply(response[0].into()))
-                } else {
-                    let response_str = radix_string(&response, &TextFormat::Hex)?;
+        // TODO: Handle known error codes
+        self.xrecv_ok()?;
 
-                    Err(Error::UnknownResponse(response_str))
-                }
-            }
-        }
+        return Ok(());
     }
 
     fn xso_get(&mut self, special_option: u16) -> Result<u8> {
-        let address = guarded_transmute_to_bytes_pod::<u16>(&special_option);
-        let data = self.xsend(&[&[0xa4], address].concat())?;
+        self.send_x()?;
+        self.send_u8(0xa4)?;
+        self.send_u16(special_option)?;
 
-        if data[0] != 0x00 || data.len() < 2 {
-            return Err(Error::Reply(data[0].into()));
-        }
+        self.xrecv_ok()?;
+        let data = self.recv_u8()?;
 
-        return Ok(data[1]);
+        return Ok(data);
     }
 
     fn xversion(&mut self) -> Result<Vec<u8>> {
-        let data = self.xsend(&[0xa0])?;
+        self.send_x()?;
+        self.send_u8(0xa0)?;
+
+        let mut data: Vec<u8> = Vec::new();
+
+        loop {
+            let length = self.recv_u8()?;
+            data.push(length);
+
+            if length == 0 {
+                break;
+            }
+
+            let mut chunk = self.recv(length as usize)?;
+            data.append(&mut chunk);
+        }
 
         return Ok(data);
     }
 
     fn xstatus(&mut self) -> Result<DeviceStatus> {
-        let data = self.xsend(&[0xa2])?;
+        self.send_x()?;
+        self.send_u8(0xa2)?;
+
+        let data = self.recv_u8()?;
 
         return Ok(DeviceStatus {
-            stop_pressed: data[0] & 0x01 != 0,
-            go_pressed: data[0] & 0x02 != 0,
-            hot: data[0] & 0x04 != 0,
-            power: data[0] & 0x08 != 0,
-            halt: data[0] & 0x10 != 0,
-            external_central_unit: data[0] & 0x20 != 0,
-            voltage_regulation: data[0] & 0x40 != 0
+            stop_pressed: data & 0x01 != 0,
+            go_pressed: data & 0x02 != 0,
+            hot: data & 0x04 != 0,
+            power: data & 0x08 != 0,
+            halt: data & 0x10 != 0,
+            external_central_unit: data & 0x20 != 0,
+            voltage_regulation: data & 0x40 != 0
         });
     }
 
     fn xnop(&mut self) -> Result<()> {
-        let (result, response) = self.xcommand(&[0xc4], &[0x00])?;
+        self.send_x()?;
+        self.send_u8(0xc4)?;
 
-        match result {
-            true => Ok(()),
-            false => {
-                let response_str = radix_string(&response, &TextFormat::Hex)?;
+        self.xrecv_ok()?;
 
-                Err(Error::UnknownResponse(response_str))
-            }
-        }
+        return Ok(());
     }
 }
