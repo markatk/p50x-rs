@@ -1,21 +1,33 @@
 [package]
 name = "p50x"
+description = "P50X protocol communication library and command-line utility"
 version = "0.1.0"
 authors = ["MarkAtk"]
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/markatk/p50x-rs.git"
 readme = "README.md"
-keywords = ["p50x", "serial"]
+keywords = ["p50x", "serial", "command-line utility", "development-tools"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["binary"]
+binary = ["clap"]
 
 [badges]
 travis-ci = { repository = "markatk/p50x-rs" }
 
-[[example]]
-name = "example"
+[lib]
+name = "p50x"
+path = "src/lib.rs"
+
+[[bin]]
+name = "p50x"
+path = "src/main.rs"
+required-features = ["binary"]
 
 [dependencies]
 serial-unit-testing = { version = "0.2.2", default-features = false }
 safe-transmute = "0.10.1"
+clap = { version = "2.33.1", optional = true }

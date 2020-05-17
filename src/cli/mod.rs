@@ -1,6 +1,6 @@
 /*
- * File: lib.rs
- * Date: 04.05.2020
+ * File: mod.rs
+ * Date: 12.05.2020
  * Author: MarkAtk
  *
  * MIT License
@@ -26,17 +26,5 @@
  * SOFTWARE.
  */
 
-mod library;
-
-pub use library::reply::*;
-pub use library::error::*;
-pub use library::protocol::*;
-pub use library::device::*;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub mod utils;
+pub mod power;

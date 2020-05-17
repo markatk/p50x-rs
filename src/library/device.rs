@@ -30,9 +30,9 @@ use serial_unit_testing::serial::*;
 use serial_unit_testing::utils::{TextFormat, bytes_from_hex_string, radix_string};
 use safe_transmute::guarded_transmute_to_bytes_pod;
 
-use crate::error::*;
-use crate::protocol::*;
-use crate::P50XReply;
+use super::error::*;
+use super::protocol::*;
+use super::reply::P50XReply;
 
 pub struct Device {
     serial: Serial,
@@ -234,6 +234,16 @@ impl P50XBinary for Device {
         return Ok(data);
     }
 
+    fn xp50xch(&mut self, extended_character: u8) -> Result<()> {
+        self.send_x()?;
+        self.send_u8(0xa1)?;
+        self.send_u8(extended_character)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
     fn xstatus(&mut self) -> Result<DeviceStatus> {
         self.send_x()?;
         self.send_u8(0xa2)?;
@@ -259,4 +269,11 @@ impl P50XBinary for Device {
 
         return Ok(());
     }
+
+    // fn xlok(&mut self, address: u16, speed: i8) -> Result<()> {
+    //     self.send_x()?;
+    //     self.send_u8(0x80)?;
+    //     self.send_u16(address)?;
+
+    // }
 }

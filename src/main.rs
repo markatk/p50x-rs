@@ -1,6 +1,6 @@
 /*
- * File: lib.rs
- * Date: 04.05.2020
+ * File: main.rs
+ * Date: 12.05.2020
  * Author: MarkAtk
  *
  * MIT License
@@ -26,17 +26,31 @@
  * SOFTWARE.
  */
 
-mod library;
+#[macro_use]
+extern crate clap;
 
-pub use library::reply::*;
-pub use library::error::*;
-pub use library::protocol::*;
-pub use library::device::*;
+use clap::{App, ArgMatches, AppSettings};
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+mod cli;
+
+fn run(matches: ArgMatches) -> Result<(), String> {
+    match matches.subcommand() {
+        ("power", Some(m)) => cli::power::run(m),
+        _ => Ok(())
+    }
+}
+
+fn main() {
+    let matches = App::new("p50x")
+        .setting(AppSettings::VersionlessSubcommands)
+        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .version(crate_version!())
+        .version_short("v")
+        .about("P50X command-line utility")
+        .subcommand(cli::power::command())
+        .get_matches();
+
+    if let Err(e) = run(matches) {
+        eprintln!("{}", e);
     }
 }

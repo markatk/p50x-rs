@@ -31,7 +31,7 @@ use std::fmt::{self, Display, Formatter};
 use std::convert::From;
 use serial_unit_testing::error::Error as SerialError;
 
-use crate::reply::P50XReply;
+use super::reply::P50XReply;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

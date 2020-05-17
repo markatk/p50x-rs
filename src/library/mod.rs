@@ -1,6 +1,6 @@
 /*
- * File: example.rs
- * Date: 04.05.2020
+ * File: mod.rs
+ * Date: 12.05.2020
  * Author: MarkAtk
  *
  * MIT License
@@ -26,34 +26,7 @@
  * SOFTWARE.
  */
 
-use p50x::*;
-
-fn main() {
-    let port_name = "/dev/ttyACM1";
-    let baud_rate = 9600;
-
-    println!("Connecting to {} with {} baud...", port_name, baud_rate);
-
-    let mut device = Device::new(port_name, baud_rate).expect("Device could not be created");
-
-    println!("P50X device detected");
-
-    let version = device.xversion().unwrap();
-    println!("Version: {:?}", version);
-
-    let status = device.xstatus().unwrap();
-    println!("Device status {:?}", status);
-
-    device.xpower_on().unwrap();
-
-    let status = device.xstatus().unwrap();
-    println!("Device status {:?}", status);
-
-    device.xpower_off().unwrap();
-
-    let status = device.xstatus().unwrap();
-    println!("Device status {:?}", status);
-
-    let so = device.xso_get(1).unwrap();
-    println!("Device baud config {}", so);
-}
+pub mod device;
+pub mod error;
+pub mod protocol;
+pub mod reply;

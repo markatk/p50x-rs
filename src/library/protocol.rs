@@ -1,5 +1,5 @@
 /*
- * File: lib.rs
+ * File: protocol.rs
  * Date: 04.05.2020
  * Author: MarkAtk
  *
@@ -26,17 +26,29 @@
  * SOFTWARE.
  */
 
-mod library;
+use crate::Result;
 
-pub use library::reply::*;
-pub use library::error::*;
-pub use library::protocol::*;
-pub use library::device::*;
+#[derive(Debug)]
+pub struct DeviceStatus {
+    pub stop_pressed: bool,
+    pub go_pressed: bool,
+    pub hot: bool,
+    pub power: bool,
+    pub halt: bool,
+    pub external_central_unit: bool,
+    pub voltage_regulation: bool
+}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+pub trait P50XBinary {
+    fn xpower_off(&mut self) -> Result<()>;
+    fn xpower_on(&mut self) -> Result<bool>;
+    fn xhalt(&mut self) -> Result<()>;
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()>;
+    fn xso_get(&mut self, special_option: u16) -> Result<u8>;
+    fn xversion(&mut self) -> Result<Vec<u8>>;
+    fn xp50xch(&mut self, extended_character: u8) -> Result<()>;
+    fn xstatus(&mut self) -> Result<DeviceStatus>;
+    fn xnop(&mut self) -> Result<()>;
+
+    // fn xlok(&mut self, address: u16, speed: i8) -> Result<()>; // TODO: Add additional data
 }
