@@ -26,7 +26,6 @@
  * SOFTWARE.
  */
 
-use std::error::Error;
 use clap::{Arg, ArgMatches};
 use p50x::Device;
 
@@ -66,6 +65,6 @@ pub fn get_device(matches: &ArgMatches) -> Result<Device, String> {
 
     match Device::new(port_name, baud_rate) {
         Ok(device) => Ok(device),
-        Err(err) => Err(err.description().to_string())
+        Err(err) => Err(err.to_string())
     }
 }

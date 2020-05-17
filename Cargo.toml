@@ -20,11 +20,10 @@ travis-ci = { repository = "markatk/p50x-rs" }
 
 [lib]
 name = "p50x"
-path = "src/lib.rs"
+path = "src/lib/lib.rs"
 
 [[bin]]
 name = "p50x"
-path = "src/main.rs"
 required-features = ["binary"]
 
 [dependencies]

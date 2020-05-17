@@ -1,5 +1,5 @@
 /*
- * File: mod.rs
+ * File: power.rs
  * Date: 12.05.2020
  * Author: MarkAtk
  *
@@ -26,7 +26,37 @@
  * SOFTWARE.
  */
 
-pub mod device;
-pub mod error;
-pub mod protocol;
-pub mod reply;
+use clap::{ArgMatches, SubCommand, App, AppSettings};
+use p50x::P50XBinary;
+
+use crate::utils::{common_args, get_device};
+
+pub fn run(matches: &ArgMatches) -> Result<(), String> {
+    let mut device = get_device(matches)?;
+
+    match matches.subcommand() {
+        ("on", _) => {
+            device.xpower_on().unwrap();
+
+            ()
+        },
+        ("off", _) => device.xpower_off().unwrap(),
+        ("halt", _) => device.xhalt().unwrap(),
+        _ => ()
+    };
+
+    return Ok(());
+}
+
+pub fn command<'a>() -> App<'a, 'a> {
+    SubCommand::with_name("power")
+        .about("Control power and related states")
+        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .args(&common_args())
+        .subcommand(SubCommand::with_name("on")
+            .about("Set power on"))
+        .subcommand(SubCommand::with_name("off")
+            .about("Set power off"))
+        .subcommand(SubCommand::with_name("halt")
+            .about("Set halt mode"))
+}

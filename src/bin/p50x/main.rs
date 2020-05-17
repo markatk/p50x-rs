@@ -31,11 +31,12 @@ extern crate clap;
 
 use clap::{App, ArgMatches, AppSettings};
 
-mod cli;
+mod power;
+mod utils;
 
 fn run(matches: ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
-        ("power", Some(m)) => cli::power::run(m),
+        ("power", Some(m)) => power::run(m),
         _ => Ok(())
     }
 }
@@ -47,7 +48,7 @@ fn main() {
         .version(crate_version!())
         .version_short("v")
         .about("P50X command-line utility")
-        .subcommand(cli::power::command())
+        .subcommand(power::command())
         .get_matches();
 
     if let Err(e) = run(matches) {

@@ -1,6 +1,6 @@
 /*
- * File: power.rs
- * Date: 12.05.2020
+ * File: protocol.rs
+ * Date: 04.05.2020
  * Author: MarkAtk
  *
  * MIT License
@@ -26,37 +26,29 @@
  * SOFTWARE.
  */
 
-use clap::{ArgMatches, SubCommand, App, AppSettings};
-use p50x::P50XBinary;
+use super::error::Result;
 
-use super::utils::{common_args, get_device};
-
-pub fn run(matches: &ArgMatches) -> Result<(), String> {
-    let mut device = get_device(matches)?;
-
-    match matches.subcommand() {
-        ("on", _) => {
-            device.xpower_on().unwrap();
-
-            ()
-        },
-        ("off", _) => device.xpower_off().unwrap(),
-        ("halt", _) => device.xhalt().unwrap(),
-        _ => ()
-    };
-
-    return Ok(());
+#[derive(Debug)]
+pub struct DeviceStatus {
+    pub stop_pressed: bool,
+    pub go_pressed: bool,
+    pub hot: bool,
+    pub power: bool,
+    pub halt: bool,
+    pub external_central_unit: bool,
+    pub voltage_regulation: bool
 }
 
-pub fn command<'a>() -> App<'a, 'a> {
-    SubCommand::with_name("power")
-        .about("Control power and related states")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .args(&common_args())
-        .subcommand(SubCommand::with_name("on")
-            .about("Set power on"))
-        .subcommand(SubCommand::with_name("off")
-            .about("Set power off"))
-        .subcommand(SubCommand::with_name("halt")
-            .about("Set halt mode"))
+pub trait P50XBinary {
+    fn xpower_off(&mut self) -> Result<()>;
+    fn xpower_on(&mut self) -> Result<bool>;
+    fn xhalt(&mut self) -> Result<()>;
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()>;
+    fn xso_get(&mut self, special_option: u16) -> Result<u8>;
+    fn xversion(&mut self) -> Result<Vec<u8>>;
+    fn xp50xch(&mut self, extended_character: u8) -> Result<()>;
+    fn xstatus(&mut self) -> Result<DeviceStatus>;
+    fn xnop(&mut self) -> Result<()>;
+
+    // fn xlok(&mut self, address: u16, speed: i8) -> Result<()>; // TODO: Add additional data
 }

@@ -26,12 +26,15 @@
  * SOFTWARE.
  */
 
-mod library;
+mod error;
+mod device;
+mod reply;
+mod protocol;
 
-pub use library::reply::*;
-pub use library::error::*;
-pub use library::protocol::*;
-pub use library::device::*;
+pub use error::{Error, Result};
+pub use reply::P50XReply;
+pub use device::Device;
+pub use protocol::{P50XBinary, DeviceStatus};
 
 #[cfg(test)]
 mod tests {

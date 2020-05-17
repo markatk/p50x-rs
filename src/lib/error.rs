@@ -49,7 +49,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
             Error::UnknownDevice => write!(f, "Unknown device"),
-            Error::Serial(ref cause) => write!(f, "Serial Error: {}", cause.description()),
+            Error::Serial(ref cause) => write!(f, "Serial Error: {}", cause.to_string()),
             Error::UnknownResponse(ref cause) => write!(f, "Unknown response: {}", cause),
             Error::Reply(ref cause) => write!(f, "P50X Reply: {:?}", cause),
             Error::Other => write!(f, "Unknown error")
