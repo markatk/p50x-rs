@@ -29,6 +29,7 @@
 #[macro_use]
 extern crate clap;
 
+use std::process::exit;
 use clap::{App, ArgMatches, AppSettings};
 
 mod power;
@@ -53,5 +54,7 @@ fn main() {
 
     if let Err(e) = run(matches) {
         eprintln!("{}", e);
+
+        exit(1);
     }
 }

@@ -59,23 +59,35 @@ pub fn common_args<'a>() -> Vec<Arg<'a, 'a>> {
 pub fn run_command<F>(matches: &ArgMatches, callback: F) -> Result<(), String> where F: Fn(&mut Device) -> p50x::Result<()> {
     let mut device = get_device(matches)?;
 
-    match callback(&mut device) {
-        Ok(result) => Ok(result),
-        Err(err) =>  Err(err.to_string())
+    if let Err(err) = callback(&mut device) {
+        return Err(err.to_string());
     }
+
+    println!("Ok");
+
+    return Ok(());
 }
 
-pub fn run_command_with_result<F, R>(matches: &ArgMatches, command_callback: F) -> Result<(), String> where F: Fn(&mut Device) -> p50x::Result<R> {
+pub fn run_command_with_result<F, G, R>(
+    matches: &ArgMatches,
+    command_callback: F,
+    result_callback: G
+) -> Result<(), String> where F: Fn(&mut Device) -> p50x::Result<R>, G: Fn(R) -> Result<String, String> {
     let mut device = get_device(matches)?;
 
     let result = match command_callback(&mut device) {
         Ok(result) => result,
-        Err(err) =>  return Err(err.to_string())
+        Err(err) => return Err(err.to_string())
     };
 
+    match result_callback(result) {
+        Ok(output) => {
+            println!("{}", output);
 
-
-    return Ok(());
+            Ok(())
+        },
+        Err(err) => Err(err.to_string())
+    }
 }
 
 pub fn get_device(matches: &ArgMatches) -> Result<Device, String> {
