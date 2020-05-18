@@ -32,12 +32,14 @@ extern crate clap;
 use std::process::exit;
 use clap::{App, ArgMatches, AppSettings};
 
-mod power;
 mod utils;
+mod power;
+mod device;
 
 fn run(matches: ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
         ("power", Some(m)) => power::run(m),
+        ("device", Some(m)) => device::run(m),
         _ => Ok(())
     }
 }
@@ -49,7 +51,10 @@ fn main() {
         .version(crate_version!())
         .version_short("v")
         .about("P50X command-line utility")
-        .subcommand(power::command())
+        .subcommands(vec![
+            power::command(),
+            device::command()
+        ])
         .get_matches();
 
     if let Err(e) = run(matches) {

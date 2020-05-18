@@ -26,8 +26,15 @@
  * SOFTWARE.
  */
 
-use clap::{Arg, SubCommand, App, ArgMatches};
+use clap::{Arg, SubCommand, App, ArgMatches, AppSettings};
 use p50x::Device;
+
+pub fn command_group<'a>(name: &str, description: &'a str, subcommands: Vec<App<'a, 'a>>) -> App<'a, 'a> {
+    SubCommand::with_name(name)
+        .about(description)
+        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .subcommands(subcommands)
+}
 
 pub fn common_command<'a>(name: &str, description: &'a str) -> App<'a, 'a> {
     SubCommand::with_name(name)

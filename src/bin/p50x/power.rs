@@ -26,21 +26,22 @@
  * SOFTWARE.
  */
 
-use clap::{ArgMatches, SubCommand, App, AppSettings};
+use clap::{ArgMatches, App};
 use p50x::P50XBinary;
 
-use crate::utils::{common_command, run_command, run_command_with_result};
+use crate::utils::{command_group, common_command, run_command, run_command_with_result};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
-        ("on", Some(m)) => {
-            run_command_with_result(m, |device| device.xpower_on(), |result| {
+        ("on", Some(m)) => run_command_with_result(
+            m,
+            |device| device.xpower_on(),
+            |result| {
                 match result {
                     true => Ok("Ok".to_string()),
                     false => Err("Power could not be turned on".to_string())
                 }
-            })?;
-        },
+            })?,
         ("off", Some(m)) => run_command(m, |device| device.xpower_off())?,
         ("halt", Some(m)) => run_command(m, |device| device.xhalt())?,
         _ => ()
@@ -50,12 +51,13 @@ pub fn run(matches: &ArgMatches) -> Result<(), String> {
 }
 
 pub fn command<'a>() -> App<'a, 'a> {
-    SubCommand::with_name("power")
-        .about("Control power and related states")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommands(vec![
+    command_group(
+        "power",
+        "Control power and related states",
+        vec![
             common_command("on", "Set power on"),
             common_command("off", "Set power off"),
             common_command("halt", "Set halt mode")
-        ])
+        ]
+    )
 }
