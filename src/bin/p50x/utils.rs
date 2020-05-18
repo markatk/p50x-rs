@@ -52,7 +52,11 @@ pub fn common_args<'a>() -> Vec<Arg<'a, 'a>> {
             .short("t")
             .help("Serial port timeout duration in ms")
             .takes_value(true)
-            .default_value("1000")
+            .default_value("1000"),
+        Arg::with_name("quiet")
+            .long("quiet")
+            .short("q")
+            .help("Prevent output to terminal")
     ]
 }
 
@@ -63,7 +67,9 @@ pub fn run_command<F>(matches: &ArgMatches, callback: F) -> Result<(), String> w
         return Err(err.to_string());
     }
 
-    println!("Ok");
+    if matches.is_present("quiet") == false {
+        println!("Ok");
+    }
 
     return Ok(());
 }
@@ -82,7 +88,9 @@ pub fn run_command_with_result<F, G, R>(
 
     match result_callback(result) {
         Ok(output) => {
-            println!("{}", output);
+            if matches.is_present("quiet") == false {
+                println!("{}", output);
+            }
 
             Ok(())
         },
