@@ -29,19 +29,15 @@
 use clap::{ArgMatches, SubCommand, App, AppSettings};
 use p50x::P50XBinary;
 
-use crate::utils::{common_args, get_device};
+use crate::utils::{common_command, run_command};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
-    let mut device = get_device(matches)?;
-
     match matches.subcommand() {
-        ("on", _) => {
-            device.xpower_on().unwrap();
-
-            ()
+        ("on", Some(m)) => {
+            run_command(m, |device| device.xpower_on())?;
         },
-        ("off", _) => device.xpower_off().unwrap(),
-        ("halt", _) => device.xhalt().unwrap(),
+        ("off", Some(m)) => run_command(m, |device| device.xpower_off())?,
+        ("halt", Some(m)) => run_command(m, |device| device.xhalt())?,
         _ => ()
     };
 
@@ -52,11 +48,9 @@ pub fn command<'a>() -> App<'a, 'a> {
     SubCommand::with_name("power")
         .about("Control power and related states")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .args(&common_args())
-        .subcommand(SubCommand::with_name("on")
-            .about("Set power on"))
-        .subcommand(SubCommand::with_name("off")
-            .about("Set power off"))
-        .subcommand(SubCommand::with_name("halt")
-            .about("Set halt mode"))
+        .subcommands(vec![
+            common_command("on", "Set power on"),
+            common_command("off", "Set power off"),
+            common_command("halt", "Set halt mode")
+        ])
 }

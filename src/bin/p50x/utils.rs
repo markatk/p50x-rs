@@ -26,8 +26,14 @@
  * SOFTWARE.
  */
 
-use clap::{Arg, ArgMatches};
+use clap::{Arg, SubCommand, App, ArgMatches};
 use p50x::Device;
+
+pub fn common_command<'a>(name: &str, description: &'a str) -> App<'a, 'a> {
+    SubCommand::with_name(name)
+        .about(description)
+        .args(&common_args())
+}
 
 pub fn common_args<'a>() -> Vec<Arg<'a, 'a>> {
     vec![
@@ -48,6 +54,28 @@ pub fn common_args<'a>() -> Vec<Arg<'a, 'a>> {
             .takes_value(true)
             .default_value("1000")
     ]
+}
+
+pub fn run_command<F>(matches: &ArgMatches, callback: F) -> Result<(), String> where F: Fn(&mut Device) -> p50x::Result<()> {
+    let mut device = get_device(matches)?;
+
+    match callback(&mut device) {
+        Ok(result) => Ok(result),
+        Err(err) =>  Err(err.to_string())
+    }
+}
+
+pub fn run_command_with_result<F, R>(matches: &ArgMatches, command_callback: F) -> Result<(), String> where F: Fn(&mut Device) -> p50x::Result<R> {
+    let mut device = get_device(matches)?;
+
+    let result = match command_callback(&mut device) {
+        Ok(result) => result,
+        Err(err) =>  return Err(err.to_string())
+    };
+
+
+
+    return Ok(());
 }
 
 pub fn get_device(matches: &ArgMatches) -> Result<Device, String> {
