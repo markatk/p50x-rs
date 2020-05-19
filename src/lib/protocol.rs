@@ -27,6 +27,7 @@
  */
 
 use super::error::Result;
+use super::reply::P50XReply;
 
 #[derive(Debug)]
 pub struct DeviceStatus {
@@ -43,8 +44,8 @@ pub trait P50XBinary {
     fn xpower_off(&mut self) -> Result<()>;
     fn xpower_on(&mut self) -> Result<bool>;
     fn xhalt(&mut self) -> Result<()>;
-    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()>;
-    fn xso_get(&mut self, special_option: u16) -> Result<u8>;
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<P50XReply>;
+    fn xso_get(&mut self, special_option: u16) -> Result<Option<u8>>;
     fn xversion(&mut self) -> Result<Vec<u8>>;
     fn xp50xch(&mut self, extended_character: u8) -> Result<()>;
     fn xstatus(&mut self) -> Result<DeviceStatus>;

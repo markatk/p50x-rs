@@ -35,11 +35,13 @@ use clap::{App, ArgMatches, AppSettings};
 mod utils;
 mod power;
 mod device;
+mod so;
 
 fn run(matches: ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
         ("power", Some(m)) => power::run(m),
         ("device", Some(m)) => device::run(m),
+        ("so", Some(m)) => so::run(m),
         _ => Ok(())
     }
 }
@@ -53,7 +55,8 @@ fn main() {
         .about("P50X command-line utility")
         .subcommands(vec![
             power::command(),
-            device::command()
+            device::command(),
+            so::command()
         ])
         .get_matches();
 

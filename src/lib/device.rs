@@ -190,27 +190,30 @@ impl P50XBinary for Device {
         return Ok(());
     }
 
-    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()> {
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<P50XReply> {
         self.send_x()?;
         self.send_u8(0xa3)?;
         self.send_u16(special_option)?;
         self.send_u8(value)?;
 
-        // TODO: Handle known error codes
-        self.xrecv_ok()?;
+        let response = self.xrecv(&[P50XReply::Ok, P50XReply::BadCommand, P50XReply::BadParameter, P50XReply::BadSpecialOptionValue])?;
 
-        return Ok(());
+        return Ok(response);
     }
 
-    fn xso_get(&mut self, special_option: u16) -> Result<u8> {
+    fn xso_get(&mut self, special_option: u16) -> Result<Option<u8>> {
         self.send_x()?;
         self.send_u8(0xa4)?;
         self.send_u16(special_option)?;
 
-        self.xrecv_ok()?;
+        let response = self.xrecv(&[P50XReply::Ok, P50XReply::BadParameter])?;
+        if response == P50XReply::BadParameter {
+            return Ok(None);
+        }
+
         let data = self.recv_u8()?;
 
-        return Ok(data);
+        return Ok(Some(data));
     }
 
     fn xversion(&mut self) -> Result<Vec<u8>> {
