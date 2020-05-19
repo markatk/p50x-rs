@@ -29,7 +29,7 @@
 use super::error::Result;
 use super::reply::P50XReply;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct DeviceStatus {
     pub stop_pressed: bool,
     pub go_pressed: bool,
@@ -38,6 +38,14 @@ pub struct DeviceStatus {
     pub halt: bool,
     pub external_central_unit: bool,
     pub voltage_regulation: bool
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct XLokOptions {
+    pub emergency_stop: bool,
+    pub force: bool,
+    pub light: bool,
+    pub functions: Option<[bool; 4]>
 }
 
 pub trait P50XBinary {
@@ -51,5 +59,5 @@ pub trait P50XBinary {
     fn xstatus(&mut self) -> Result<DeviceStatus>;
     fn xnop(&mut self) -> Result<()>;
 
-    // fn xlok(&mut self, address: u16, speed: i8) -> Result<()>; // TODO: Add additional data
+    fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<P50XReply>;
 }

@@ -123,3 +123,10 @@ pub fn get_device(matches: &ArgMatches) -> Result<Device, String> {
         Err(err) => Err(err.to_string())
     }
 }
+
+pub fn str_to_bool(value: &str) -> bool {
+    match value.to_lowercase().as_str() {
+        "true" | "t" | "1" | "one" | "yes" | "y"  => true,
+        _ => false
+    }
+}

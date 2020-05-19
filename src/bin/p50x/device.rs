@@ -30,7 +30,7 @@ use clap::{ArgMatches, App};
 use p50x::P50XBinary;
 use serial_unit_testing::utils::{radix_string, TextFormat};
 
-use crate::utils::{command_group, common_command, run_command_with_result};
+use crate::utils::{command_group, common_command, run_command, run_command_with_result};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
@@ -79,6 +79,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), String> {
 
                 return Ok(version);
             })?,
+        ("nop", Some(m)) => run_command(m, |device| device.xnop())?,
         _ => ()
     };
 
@@ -91,7 +92,8 @@ pub fn command<'a>() -> App<'a, 'a> {
         "Get information about the device",
         vec![
             common_command("status", "Get device current status"),
-            common_command("version", "Get device version")
+            common_command("version", "Get device version"),
+            common_command("nop", "No operation command")
         ]
     )
 }

@@ -36,12 +36,14 @@ mod utils;
 mod power;
 mod device;
 mod so;
+mod loco;
 
 fn run(matches: ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
         ("power", Some(m)) => power::run(m),
         ("device", Some(m)) => device::run(m),
         ("so", Some(m)) => so::run(m),
+        ("loco", Some(m)) => loco::run(m),
         _ => Ok(())
     }
 }
@@ -56,7 +58,8 @@ fn main() {
         .subcommands(vec![
             power::command(),
             device::command(),
-            so::command()
+            so::command(),
+            loco::command()
         ])
         .get_matches();
 

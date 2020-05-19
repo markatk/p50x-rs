@@ -273,10 +273,59 @@ impl P50XBinary for Device {
         return Ok(());
     }
 
-    // fn xlok(&mut self, address: u16, speed: i8) -> Result<()> {
-    //     self.send_x()?;
-    //     self.send_u8(0x80)?;
-    //     self.send_u16(address)?;
+    fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<P50XReply> {
+        // get config byte from options
+        let mut config: u8 = 0;
 
-    // }
+        if options.light {
+            config |= 0x10;
+        }
+
+        if options.force {
+            config |= 0x40;
+        }
+
+        if let Some(functions) = options.functions {
+            config |= 0x80;
+
+            for i in 0..4 {
+                if functions[3 - i] {
+                    config |= 1 << i;
+                }
+            }
+        }
+
+        // get actual speed value
+        let speed_value: u8 = if options.emergency_stop {
+            // speed 1 maps to emergency stop
+            1
+        } else {
+            if speed >= 0 {
+                speed as u8
+            } else {
+                config |= 0x20;
+
+                (-speed) as u8
+            }
+        };
+
+        self.send_x()?;
+        self.send_u8(0x80)?;
+        self.send_u16(address)?;
+        self.send_u8(speed_value as u8)?;
+        self.send_u8(config)?;
+
+        let response = self.xrecv(&[
+            P50XReply::Ok,
+            P50XReply::BadParameter,
+            P50XReply::NoLokCommandSpace,
+            P50XReply::NoSlot,
+            P50XReply::BadLokParameter,
+            P50XReply::LokBusy,
+            P50XReply::LokHalt,
+            P50XReply::LokPowerOff
+        ])?;
+
+        return Ok(response);
+    }
 }

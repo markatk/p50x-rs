@@ -34,7 +34,7 @@ mod protocol;
 pub use error::{Error, Result};
 pub use reply::P50XReply;
 pub use device::Device;
-pub use protocol::{P50XBinary, DeviceStatus};
+pub use protocol::{P50XBinary, DeviceStatus, XLokOptions};
 
 #[cfg(test)]
 mod tests {
