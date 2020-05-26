@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.0] - 26.05.2020
 
 ### Added
 - Add P50X protocol library and main device struct
