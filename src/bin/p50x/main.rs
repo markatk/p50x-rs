@@ -66,6 +66,7 @@ fn main() {
     if let Err(e) = run(matches) {
         eprintln!("{}", e);
 
+        // TODO: Output p50x result code
         exit(1);
     }
 }

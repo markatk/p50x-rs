@@ -26,8 +26,29 @@
  * SOFTWARE.
  */
 
+use std::convert::From;
+
 use super::error::Result;
-use super::reply::P50XReply;
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[repr(u8)]
+pub enum LokProtocol {
+    Motorola = 0,
+    Selectrix = 1,
+    DCC = 2,
+    FMZ = 3
+}
+
+impl From<u8> for LokProtocol {
+    fn from(value: u8) -> LokProtocol {
+        match value {
+            1 => LokProtocol::Selectrix,
+            2 => LokProtocol::DCC,
+            3 => LokProtocol::FMZ,
+            0 | _ => LokProtocol::Motorola
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 pub struct DeviceStatus {
@@ -48,16 +69,37 @@ pub struct XLokOptions {
     pub functions: Option<[bool; 4]>
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct XLokStatus {
+    pub speed: i8,
+    pub real_speed: i8,
+    pub options: XLokOptions,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct XLokConfig {
+    pub protocol: LokProtocol,
+    pub speed_steps: u8,
+    pub virtual_address: Option<u16>
+}
+
 pub trait P50XBinary {
     fn xpower_off(&mut self) -> Result<()>;
-    fn xpower_on(&mut self) -> Result<bool>;
+    fn xpower_on(&mut self) -> Result<()>;
     fn xhalt(&mut self) -> Result<()>;
-    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<P50XReply>;
-    fn xso_get(&mut self, special_option: u16) -> Result<Option<u8>>;
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()>;
+    fn xso_get(&mut self, special_option: u16) -> Result<u8>;
     fn xversion(&mut self) -> Result<Vec<u8>>;
     fn xp50xch(&mut self, extended_character: u8) -> Result<()>;
     fn xstatus(&mut self) -> Result<DeviceStatus>;
     fn xnop(&mut self) -> Result<()>;
 
-    fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<P50XReply>;
+    fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<()>;
+    fn xlok_status(&mut self, address: u16) -> Result<XLokStatus>;
+    fn xlok_config(&mut self, address: u16) -> Result<XLokConfig>;
+    fn xlok_dispatch(&mut self, address: u16) -> Result<Option<u8>>;
+    fn xfunc(&mut self, address: u16, functions: [bool; 8]) -> Result<()>;
+    fn xfunc_status(&mut self, address: u16) -> Result<[bool; 8]>;
+    fn xfuncx(&mut self, address: u16, functions: [bool; 8]) -> Result<()>;
+    fn xfuncx_status(&mut self, address: u16) -> Result<[bool; 8]>;
 }

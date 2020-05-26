@@ -28,7 +28,7 @@
 
 use serial_unit_testing::serial::*;
 use serial_unit_testing::utils::{TextFormat, bytes_from_hex_string, radix_string};
-use safe_transmute::guarded_transmute_to_bytes_pod;
+use safe_transmute::{guarded_transmute_to_bytes_pod, guarded_transmute_pod};
 
 use super::error::*;
 use super::protocol::*;
@@ -49,7 +49,7 @@ impl Device {
             ..Default::default()
         };
 
-        let mut serial = Serial::open_with_settings(port_name, &settings)?;
+        let mut serial = Serial::open_with_settings(port_name, settings)?;
 
         // verify device is p50x device
         let check_settings = CheckSettings {
@@ -69,6 +69,13 @@ impl Device {
             extended_character: 0x58,
             read_buffer: Vec::new()
         });
+    }
+
+    pub fn set_timeout(&mut self, timeout: u64) -> Result<()> {
+        match self.serial.set_timeout(timeout) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Error::from(err))
+        }
     }
 
     pub fn send_u8(&mut self, value: u8) -> Result<()> {
@@ -134,6 +141,13 @@ impl Device {
         return Ok(data[0]);
     }
 
+    pub fn recv_u16(&mut self) -> Result<u16> {
+        let data = self.recv(2)?;
+        let result = guarded_transmute_pod(&data).unwrap();
+
+        return Ok(result);
+    }
+
     pub fn recv_reply(&mut self) -> Result<P50XReply> {
         let data = self.recv_u8()?;
 
@@ -172,13 +186,13 @@ impl P50XBinary for Device {
         return Ok(());
     }
 
-    fn xpower_on(&mut self) -> Result<bool> {
+    fn xpower_on(&mut self) -> Result<()> {
         self.send_x()?;
         self.send_u8(0xa7)?;
 
-        let response = self.xrecv(&[P50XReply::Ok, P50XReply::PowerOff])?;
+        self.xrecv_ok()?;
 
-        return Ok(response == P50XReply::Ok);
+        return Ok(());
     }
 
     fn xhalt(&mut self) -> Result<()> {
@@ -190,30 +204,26 @@ impl P50XBinary for Device {
         return Ok(());
     }
 
-    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<P50XReply> {
+    fn xso_set(&mut self, special_option: u16, value: u8) -> Result<()> {
         self.send_x()?;
         self.send_u8(0xa3)?;
         self.send_u16(special_option)?;
         self.send_u8(value)?;
 
-        let response = self.xrecv(&[P50XReply::Ok, P50XReply::BadCommand, P50XReply::BadParameter, P50XReply::BadSpecialOptionValue])?;
+        self.xrecv_ok()?;
 
-        return Ok(response);
+        return Ok(());
     }
 
-    fn xso_get(&mut self, special_option: u16) -> Result<Option<u8>> {
+    fn xso_get(&mut self, special_option: u16) -> Result<u8> {
         self.send_x()?;
         self.send_u8(0xa4)?;
         self.send_u16(special_option)?;
 
-        let response = self.xrecv(&[P50XReply::Ok, P50XReply::BadParameter])?;
-        if response == P50XReply::BadParameter {
-            return Ok(None);
-        }
-
+        self.xrecv_ok()?;
         let data = self.recv_u8()?;
 
-        return Ok(Some(data));
+        return Ok(data);
     }
 
     fn xversion(&mut self) -> Result<Vec<u8>> {
@@ -273,7 +283,7 @@ impl P50XBinary for Device {
         return Ok(());
     }
 
-    fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<P50XReply> {
+    fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<()> {
         // get config byte from options
         let mut config: u8 = 0;
 
@@ -315,17 +325,148 @@ impl P50XBinary for Device {
         self.send_u8(speed_value as u8)?;
         self.send_u8(config)?;
 
-        let response = self.xrecv(&[
-            P50XReply::Ok,
-            P50XReply::BadParameter,
-            P50XReply::NoLokCommandSpace,
-            P50XReply::NoSlot,
-            P50XReply::BadLokParameter,
-            P50XReply::LokBusy,
-            P50XReply::LokHalt,
-            P50XReply::LokPowerOff
-        ])?;
+        self.xrecv_ok()?;
 
-        return Ok(response);
+        return Ok(());
+    }
+
+    fn xlok_status(&mut self, address: u16) -> Result<XLokStatus> {
+        self.send_x()?;
+        self.send_u8(0x84)?;
+        self.send_u16(address)?;
+
+        self.xrecv_ok()?;
+        let mut speed = self.recv_u8()? as i8;
+        let config = self.recv_u8()?;
+        let mut real_speed = self.recv_u8()? as i8;
+
+        if config & 0x20 != 0 {
+            speed = -speed;
+            real_speed = -real_speed;
+        }
+
+        return Ok(XLokStatus {
+            speed,
+            real_speed,
+            options: XLokOptions {
+                emergency_stop: speed == 1,
+                force: false,
+                light: config & 0x10 != 0,
+                functions: Some([config & 0x01 != 0, config & 0x02 != 0, config & 0x04 != 0, config & 0x08 != 0])
+            }
+        });
+    }
+
+    fn xlok_config(&mut self, address: u16) -> Result<XLokConfig> {
+        self.send_x()?;
+        self.send_u8(0x85)?;
+        self.send_u16(address)?;
+
+        self.xrecv_ok()?;
+        let protocol = self.recv_u8()?;
+        let speed_steps = self.recv_u8()?;
+        let virtual_address_value = self.recv_u16()?;
+
+        let virtual_address = if virtual_address_value == 0xFFFF {
+            None
+        } else {
+            Some(virtual_address_value)
+        };
+
+        return Ok(XLokConfig {
+            protocol: LokProtocol::from(protocol),
+            speed_steps,
+            virtual_address
+        });
+    }
+
+    fn xlok_dispatch(&mut self, address: u16) -> Result<Option<u8>> {
+        self.send_x()?;
+        self.send_u8(0x83)?;
+        self.send_u16(address)?;
+
+        if address & 0xFF00 != 0 {
+            let result = self.recv_u8()?;
+
+            return Ok(Some(result));
+        } else {
+            self.xrecv_ok()?;
+
+            return Ok(None);
+        }
+    }
+
+    fn xfunc(&mut self, address: u16, functions: [bool; 8]) -> Result<()> {
+        let mut value: u8 = 0;
+
+        for i in 0..8 {
+            if functions[i] {
+                value |= 1 << i;
+            }
+        }
+
+        self.send_x()?;
+        self.send_u8(0x88)?;
+        self.send_u16(address)?;
+        self.send_u8(value)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
+    fn xfunc_status(&mut self, address: u16) -> Result<[bool; 8]> {
+        self.send_x()?;
+        self.send_u8(0x8C)?;
+        self.send_u16(address)?;
+
+        self.xrecv_ok()?;
+        let data = self.recv_u8()?;
+        let mut functions: [bool; 8] = [false; 8];
+
+        for i in 0..8 {
+            if data & (1 << i) != 0 {
+                functions[i] = true;
+            }
+        }
+
+        return Ok(functions);
+    }
+
+    fn xfuncx(&mut self, address: u16, functions: [bool; 8]) -> Result<()> {
+        let mut value: u8 = 0;
+
+        for i in 0..8 {
+            if functions[i] {
+                value |= 1 << i;
+            }
+        }
+
+        self.send_x()?;
+        self.send_u8(0x89)?;
+        self.send_u16(address)?;
+        self.send_u8(value)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
+    fn xfuncx_status(&mut self, address: u16) -> Result<[bool; 8]> {
+        self.send_x()?;
+        self.send_u8(0x8D)?;
+        self.send_u16(address)?;
+
+        self.xrecv_ok()?;
+        let data = self.recv_u8()?;
+        let mut functions: [bool; 8] = [false; 8];
+
+        for i in 0..8 {
+            if data & (1 << i) != 0 {
+                functions[i] = true;
+            }
+        }
+
+        return Ok(functions);
     }
 }
