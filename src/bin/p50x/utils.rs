@@ -27,7 +27,7 @@
  */
 
 use clap::{Arg, SubCommand, App, ArgMatches, AppSettings};
-use p50x::Device;
+use p50x::{Device, P50XReply, Error};
 
 pub fn command_group<'a>(name: &str, description: &'a str, subcommands: Vec<App<'a, 'a>>) -> App<'a, 'a> {
     SubCommand::with_name(name)
@@ -70,15 +70,21 @@ pub fn common_args<'a>() -> Vec<Arg<'a, 'a>> {
 pub fn run_command<F>(matches: &ArgMatches, callback: F) -> Result<(), String> where F: Fn(&mut Device) -> p50x::Result<()> {
     let mut device = get_device(matches)?;
 
-    if let Err(err) = callback(&mut device) {
-        return Err(err.to_string());
-    }
+    match callback(&mut device) {
+        Ok(_) => {
+            if matches.is_present("quiet") == false {
+                println!("{}", P50XReply::Ok);
+            }
 
-    if matches.is_present("quiet") == false {
-        println!("Ok");
+            return Ok(());
+        },
+        Err(err) => {
+            match err {
+                Error::Reply(reply) => Err(reply.to_string()),
+                _ => Err(err.to_string())
+            }
+        }
     }
-
-    return Ok(());
 }
 
 pub fn run_command_with_result<F, G, R>(
@@ -90,7 +96,12 @@ pub fn run_command_with_result<F, G, R>(
 
     let result = match command_callback(&mut device) {
         Ok(result) => result,
-        Err(err) => return Err(err.to_string())
+        Err(err) => {
+            return match err {
+                Error::Reply(reply) => Err(reply.to_string()),
+                _ => Err(err.to_string())
+            };
+        }
     };
 
     match result_callback(result) {

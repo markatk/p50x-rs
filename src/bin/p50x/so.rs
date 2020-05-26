@@ -27,9 +27,9 @@
  */
 
 use clap::{ArgMatches, App, Arg};
-use p50x::{P50XBinary, Error, P50XReply};
+use p50x::{P50XBinary, Error};
 
-use crate::utils::{command_group, common_command, run_command_with_result};
+use crate::utils::{command_group, common_command, run_command, run_command_with_result};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
@@ -41,13 +41,8 @@ pub fn run(matches: &ArgMatches) -> Result<(), String> {
                     Err(_) => Err(Error::Other) // TODO: Proper handle parse error
                 }
             },
-            |result| {
-                match result {
-                    Some(value) => Ok(format!("{}", value)),
-                    None => Err("Invalid special option number".to_string())
-                }
-            })?,
-        ("set", Some(m)) => run_command_with_result(
+            |result| Ok(result.to_string()))?,
+        ("set", Some(m)) => run_command(
             m,
             |device| {
                 let so = match m.value_of("special_option").unwrap().parse::<u16>() {
@@ -58,15 +53,6 @@ pub fn run(matches: &ArgMatches) -> Result<(), String> {
                 match m.value_of("value").unwrap().parse::<u8>() {
                     Ok(value) => device.xso_set(so, value),
                     Err(_) => Err(Error::Other) // TODO: Proper handle parse error
-                }
-            },
-            |result| {
-                match result {
-                    P50XReply::Ok => Ok("Ok".to_string()),
-                    P50XReply::BadCommand => Err("Command not implemented".to_string()),
-                    P50XReply::BadParameter => Err("Invalid special option number".to_string()),
-                    P50XReply::BadSpecialOptionValue => Err("Invalid special option value".to_string()),
-                    _ => Err("Invalid response".to_string())
                 }
             })?,
         _ => ()

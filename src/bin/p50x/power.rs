@@ -29,19 +29,11 @@
 use clap::{ArgMatches, App};
 use p50x::P50XBinary;
 
-use crate::utils::{command_group, common_command, run_command, run_command_with_result};
+use crate::utils::{command_group, common_command, run_command};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
-        ("on", Some(m)) => run_command_with_result(
-            m,
-            |device| device.xpower_on(),
-            |result| {
-                match result {
-                    true => Ok("Ok".to_string()),
-                    false => Err("Power could not be turned on".to_string())
-                }
-            })?,
+        ("on", Some(m)) => run_command(m, |device| device.xpower_on())?,
         ("off", Some(m)) => run_command(m, |device| device.xpower_off())?,
         ("halt", Some(m)) => run_command(m, |device| device.xhalt())?,
         _ => ()

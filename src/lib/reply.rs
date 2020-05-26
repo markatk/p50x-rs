@@ -27,8 +27,9 @@
  */
 
 use std::convert::From;
+use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[repr(u8)]
 pub enum P50XReply {
     Ok = 0x00,
@@ -43,6 +44,7 @@ pub enum P50XReply {
     LokBusy = 0x0D,
     BadTurnoutParameter = 0x0E,
     BadSpecialOptionValue = 0x0F,
+    NoI2CCommandSpace = 0x10,
     LowTurnoutCommandStackSpace = 0x40,
     LokHalt = 0x41,
     LokPowerOff = 0x42,
@@ -65,11 +67,37 @@ impl From<u8> for P50XReply {
             0x0D => P50XReply::LokBusy,
             0x0E => P50XReply::BadTurnoutParameter,
             0x0F => P50XReply::BadSpecialOptionValue,
+            0x10 => P50XReply::NoI2CCommandSpace,
             0x40 => P50XReply::LowTurnoutCommandStackSpace,
             0x41 => P50XReply::LokHalt,
             0x42 => P50XReply::LokPowerOff,
             0x80 => P50XReply::Busy,
             _ => P50XReply::Unknown
+        }
+    }
+}
+
+impl fmt::Display for P50XReply {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            P50XReply::Ok => write!(f, "Ok"),
+            P50XReply::BadCommand => write!(f, "Command not implemented"),
+            P50XReply::BadParameter => write!(f, "Bad parameter value"),
+            P50XReply::PowerOff => write!(f, "Power is off"),
+            P50XReply::NoLokCommandSpace => write!(f, "Locomotive command stack is full"),
+            P50XReply::FullTurnoutCommandStack => write!(f, "Turnout command stack is full"),
+            P50XReply::NoData => write!(f, "No locomotive data available"),
+            P50XReply::NoSlot => write!(f, "No slot available"),
+            P50XReply::BadLokParameter => write!(f, "Bad locomotive address"),
+            P50XReply::LokBusy => write!(f, "Locomotive already controlled by another device"),
+            P50XReply::BadTurnoutParameter => write!(f, "Bad turnout address"),
+            P50XReply::BadSpecialOptionValue => write!(f, "Bad special option value"),
+            P50XReply::NoI2CCommandSpace => write!(f, "I2C command stack is full"),
+            P50XReply::LowTurnoutCommandStackSpace => write!(f, "Tunrout command stack is nearly full"),
+            P50XReply::LokHalt => write!(f, "Command accepted but in halt mode"),
+            P50XReply::LokPowerOff => write!(f, "Command accepted but power is off"),
+            P50XReply::Busy => write!(f, "Device is busy"),
+            P50XReply::Unknown => write!(f, "Unknown error")
         }
     }
 }

@@ -27,13 +27,13 @@
  */
 
 use clap::{ArgMatches, App, Arg};
-use p50x::{P50XBinary, Error, P50XReply, XLokOptions};
+use p50x::{P50XBinary, Error, XLokOptions};
 
-use crate::utils::{command_group, common_command, run_command_with_result, str_to_bool};
+use crate::utils::{command_group, common_command, run_command, str_to_bool};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
-        ("set", Some(m)) => run_command_with_result(
+        ("set", Some(m)) => run_command(
             m,
             |device| {
                 let address = match m.value_of("address").unwrap().parse::<u16>() {
@@ -64,15 +64,6 @@ pub fn run(matches: &ArgMatches) -> Result<(), String> {
                 match m.value_of("speed").unwrap().parse::<i8>() {
                     Ok(speed) => device.xlok(address, speed, options),
                     Err(_) => Err(Error::Other) // TODO: Proper handle parse error
-                }
-            },
-            |result| {
-                match result {
-                    P50XReply::Ok => Ok("Ok".to_string()),
-                    P50XReply::BadCommand => Err("Command not implemented".to_string()),
-                    P50XReply::BadParameter => Err("Invalid special option number".to_string()),
-                    P50XReply::BadSpecialOptionValue => Err("Invalid special option value".to_string()),
-                    _ => Err("Invalid response".to_string())
                 }
             })?,
         _ => ()
