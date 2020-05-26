@@ -27,8 +27,10 @@
  */
 
 use std::convert::From;
+use std::fmt;
 
 use super::error::Result;
+use super::utils::bool_arr_to_string;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
@@ -61,6 +63,20 @@ pub struct DeviceStatus {
     pub voltage_regulation: bool
 }
 
+impl fmt::Display for DeviceStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Stop: {}\nGo: {}\nHot: {}\nPower: {}\nHalt: {}\nExternal Central Unit: {}\nVoltage Regulation: {}",
+            self.stop_pressed,
+            self.go_pressed,
+            self.hot,
+            self.power,
+            self.halt,
+            self.external_central_unit,
+            self.voltage_regulation
+        )
+    }
+}
+
 #[derive(Debug, Copy, Clone, Default)]
 pub struct XLokOptions {
     pub emergency_stop: bool,
@@ -76,11 +92,30 @@ pub struct XLokStatus {
     pub options: XLokOptions,
 }
 
+impl fmt::Display for XLokStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Speed: {}\nReal speed: {}\nEmergency stop: {}\nForce: {}\nLight: {}\nFunctions: {}",
+            self.speed,
+            self.real_speed,
+            self.options.emergency_stop,
+            self.options.force,
+            self.options.light,
+            bool_arr_to_string(&self.options.functions.unwrap())
+        )
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct XLokConfig {
     pub protocol: LokProtocol,
     pub speed_steps: u8,
     pub virtual_address: Option<u16>
+}
+
+impl fmt::Display for XLokConfig {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Protocol: {:?}\nSpeed steps: {}\nVirtual address: {:?}", self.protocol, self.speed_steps, self.virtual_address)
+    }
 }
 
 pub trait P50XBinary {

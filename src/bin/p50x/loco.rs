@@ -27,9 +27,9 @@
  */
 
 use clap::{ArgMatches, App, Arg};
-use p50x::{P50XBinary, Error, XLokOptions};
+use p50x::{P50XBinary, Error, XLokOptions, bool_arr_to_string};
 
-use crate::utils::{command_group, common_command, run_command, str_to_bool};
+use crate::utils::{command_group, common_command, run_command, run_command_with_result, str_to_bool};
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
@@ -65,7 +65,80 @@ pub fn run(matches: &ArgMatches) -> Result<(), String> {
                     Ok(speed) => device.xlok(address, speed, options),
                     Err(_) => Err(Error::Other) // TODO: Proper handle parse error
                 }
-            })?,
+            }
+        )?,
+        ("status", Some(m)) => run_command_with_result(
+            m,
+            |device| {
+                match m.value_of("address").unwrap().parse::<u16>() {
+                    Ok(address) => device.xlok_status(address),
+                    Err(_) => return Err(Error::Other) // TODO: Proper handle parse error
+                }
+            },
+            |result| Ok(result.to_string())
+        )?,
+        ("config", Some(m)) => run_command_with_result(
+            m,
+            |device| {
+                match m.value_of("address").unwrap().parse::<u16>() {
+                    Ok(address) => device.xlok_config(address),
+                    Err(_) => return Err(Error::Other) // TODO: Proper handle parse error
+                }
+            },
+            |result| Ok(result.to_string())
+        )?,
+        ("func", Some(m)) => run_command(
+            m,
+            |device| {
+                let function_values: Vec<_> = m.values_of("functions").unwrap().collect();
+                let mut values: [bool; 8] = [false, false, false, false, false, false, false, false];
+
+                for i in 0..4 {
+                    values[i] = str_to_bool(function_values[i]);
+                }
+
+                match m.value_of("address").unwrap().parse::<u16>() {
+                    Ok(address) => device.xfunc(address, values),
+                    Err(_) => return Err(Error::Other) // TODO: Proper handle parse error
+                }
+            }
+        )?,
+        ("func-status", Some(m)) => run_command_with_result(
+            m,
+            |device| {
+                match m.value_of("address").unwrap().parse::<u16>() {
+                    Ok(address) => device.xfunc_status(address),
+                    Err(_) => return Err(Error::Other) // TODO: Proper handle parse error
+                }
+            },
+            |result| Ok(bool_arr_to_string(&result))
+        )?,
+        ("funcx", Some(m)) => run_command(
+            m,
+            |device| {
+                let function_values: Vec<_> = m.values_of("functions").unwrap().collect();
+                let mut values: [bool; 8] = [false, false, false, false, false, false, false, false];
+
+                for i in 0..4 {
+                    values[i] = str_to_bool(function_values[i]);
+                }
+
+                match m.value_of("address").unwrap().parse::<u16>() {
+                    Ok(address) => device.xfuncx(address, values),
+                    Err(_) => return Err(Error::Other) // TODO: Proper handle parse error
+                }
+            }
+        )?,
+        ("funcx-status", Some(m)) => run_command_with_result(
+            m,
+            |device| {
+                match m.value_of("address").unwrap().parse::<u16>() {
+                    Ok(address) => device.xfuncx_status(address),
+                    Err(_) => return Err(Error::Other) // TODO: Proper handle parse error
+                }
+            },
+            |result| Ok(bool_arr_to_string(&result))
+        )?,
         _ => ()
     };
 
@@ -104,7 +177,49 @@ pub fn command<'a>() -> App<'a, 'a> {
                     .short("F")
                     .takes_value(true)
                     .min_values(4)
-                    .max_values(4))
+                    .max_values(4)),
+            common_command("status", "Get locomotive status")
+                .arg(Arg::with_name("address")
+                    .help("Locomotive address")
+                    .required(true)
+                    .takes_value(true)),
+            common_command("config", "Get locomotive configuration")
+                .arg(Arg::with_name("address")
+                    .help("Locomotive address")
+                    .required(true)
+                    .takes_value(true)),
+            common_command("func", "Set locomotive first function group")
+                .arg(Arg::with_name("address")
+                    .help("Locomotive address")
+                    .required(true)
+                    .takes_value(true))
+                .arg(Arg::with_name("functions")
+                    .help("Functions 1-8 to set")
+                    .takes_value(true)
+                    .required(true)
+                    .min_values(8)
+                    .max_values(8)),
+            common_command("func-status", "Get locomotive first function group")
+                .arg(Arg::with_name("address")
+                    .help("Locomotive address")
+                    .required(true)
+                    .takes_value(true)),
+            common_command("funcx", "Set locomotive second function group")
+                .arg(Arg::with_name("address")
+                    .help("Locomotive address")
+                    .required(true)
+                    .takes_value(true))
+                .arg(Arg::with_name("functions")
+                    .help("Functions 9-16 to set")
+                    .takes_value(true)
+                    .required(true)
+                    .min_values(8)
+                    .max_values(8)),
+            common_command("funcx-status", "Get locomotive second function group")
+                .arg(Arg::with_name("address")
+                    .help("Locomotive address")
+                    .required(true)
+                    .takes_value(true))
         ]
     )
 }

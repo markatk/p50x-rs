@@ -34,21 +34,7 @@ use crate::utils::{command_group, common_command, run_command, run_command_with_
 
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
-        ("status", Some(m)) => run_command_with_result(
-            m,
-            |device| device.xstatus(),
-            |result| {
-                Ok(format!(
-                    "Stop: {}\nGo: {}\nHot: {}\nPower: {}\nHalt: {}\nExternal Central Unit: {}\nVoltage Regulation: {}",
-                    result.stop_pressed,
-                    result.go_pressed,
-                    result.hot,
-                    result.power,
-                    result.halt,
-                    result.external_central_unit,
-                    result.voltage_regulation
-                ))
-            })?,
+        ("status", Some(m)) => run_command_with_result(m, |device| device.xstatus(), |result| Ok(result.to_string()))?,
         ("version", Some(m)) => run_command_with_result(
             m,
             |device| device.xversion(),

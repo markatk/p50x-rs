@@ -1,6 +1,6 @@
 /*
- * File: lib.rs
- * Date: 04.05.2020
+ * File: utils.rs
+ * Date: 26.05.2020
  * Author: MarkAtk
  *
  * MIT License
@@ -26,22 +26,15 @@
  * SOFTWARE.
  */
 
-mod error;
-mod device;
-mod reply;
-mod protocol;
-mod utils;
-
-pub use error::{Error, Result};
-pub use reply::P50XReply;
-pub use device::Device;
-pub use protocol::{P50XBinary, DeviceStatus, XLokOptions};
-pub use utils::bool_arr_to_string;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+pub fn bool_arr_to_string(values: &[bool]) -> String {
+    values
+        .iter()
+        .map(|x| {
+            match x {
+                true => "On",
+                false => "Off"
+            }
+        })
+        .collect::<Vec<&str>>()
+        .join(", ")
 }
