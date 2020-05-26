@@ -7,7 +7,7 @@ edition = "2018"
 license = "MIT"
 repository = "https://github.com/markatk/p50x-rs.git"
 readme = "README.md"
-keywords = ["p50x", "serial", "command-line utility", "development-tools"]
+keywords = ["p50x", "serial", "command-line-utility", "development-tools"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
