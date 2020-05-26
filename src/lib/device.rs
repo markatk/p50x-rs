@@ -78,14 +78,14 @@ impl Device {
         }
     }
 
-    pub fn send_u8(&mut self, value: u8) -> Result<()> {
+    fn send_u8(&mut self, value: u8) -> Result<()> {
         let request = radix_string(&[value], &self.check_settings.input_format)?;
         self.serial.write_format(&request, self.check_settings.input_format)?;
 
         return Ok(());
     }
 
-    pub fn send_u16(&mut self, value: u16) -> Result<()> {
+    fn send_u16(&mut self, value: u16) -> Result<()> {
         let data = guarded_transmute_to_bytes_pod::<u16>(&value);
         let request = radix_string(data, &self.check_settings.input_format)?;
         self.serial.write_format(&request, self.check_settings.input_format)?;
@@ -93,7 +93,7 @@ impl Device {
         return Ok(());
     }
 
-    pub fn send_u32(&mut self, value: u32) -> Result<()> {
+    fn send_u32(&mut self, value: u32) -> Result<()> {
         let data = guarded_transmute_to_bytes_pod::<u32>(&value);
         let request = radix_string(data, &self.check_settings.input_format)?;
         self.serial.write_format(&request, self.check_settings.input_format)?;
@@ -101,11 +101,11 @@ impl Device {
         return Ok(());
     }
 
-    pub fn send_x(&mut self) -> Result<()> {
+    fn send_x(&mut self) -> Result<()> {
         self.send_u8(self.extended_character)
     }
 
-    pub fn recv(&mut self, length: usize) -> Result<Vec<u8>> {
+    fn recv(&mut self, length: usize) -> Result<Vec<u8>> {
         // if requested data is already completely read
         if self.read_buffer.len() >= length {
             let mut data: Vec<u8> = Vec::new();
@@ -135,26 +135,26 @@ impl Device {
         return Ok(data);
     }
 
-    pub fn recv_u8(&mut self) -> Result<u8> {
+    fn recv_u8(&mut self) -> Result<u8> {
         let data = self.recv(1)?;
 
         return Ok(data[0]);
     }
 
-    pub fn recv_u16(&mut self) -> Result<u16> {
+    fn recv_u16(&mut self) -> Result<u16> {
         let data = self.recv(2)?;
         let result = guarded_transmute_pod(&data).unwrap();
 
         return Ok(result);
     }
 
-    pub fn recv_reply(&mut self) -> Result<P50XReply> {
+    fn recv_reply(&mut self) -> Result<P50XReply> {
         let data = self.recv_u8()?;
 
         return Ok(data.into());
     }
 
-    pub fn xrecv(&mut self, valid_responses: &[P50XReply]) -> Result<P50XReply> {
+    fn xrecv(&mut self, valid_responses: &[P50XReply]) -> Result<P50XReply> {
         let response = self.recv_reply()?;
 
         if valid_responses.contains(&response) == false {
@@ -164,7 +164,7 @@ impl Device {
         return Ok(response);
     }
 
-    pub fn xrecv_ok(&mut self) -> Result<P50XReply> {
+    fn xrecv_ok(&mut self) -> Result<P50XReply> {
         self.xrecv(&[P50XReply::Ok])
     }
 
