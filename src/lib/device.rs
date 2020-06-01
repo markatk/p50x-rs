@@ -283,6 +283,90 @@ impl P50XBinary for Device {
         return Ok(());
     }
 
+    fn xsensor(&mut self, module: u8) -> Result<[bool; 16]> {
+        self.send_x()?;
+        self.send_u8(0x98)?;
+        self.send_u8(module)?;
+
+        self.xrecv_ok()?;
+        let data = self.recv_u16()?;
+
+        let mut result = [false; 16];
+
+        for i in 0..16 {
+            if data & (1 << i) != 0 {
+                result[i] = true;
+            }
+        }
+
+        return Ok(result);
+    }
+
+    fn xsens_off(&mut self) -> Result<()> {
+        self.send_x()?;
+        self.send_u8(0x99)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
+    fn x88p_get(&mut self, parameter: u8) -> Result<u8> {
+        self.send_x()?;
+        self.send_u8(0x9C)?;
+        self.send_u8(parameter)?;
+
+        self.xrecv_ok()?;
+        let data = self.recv_u8()?;
+
+        return Ok(data);
+    }
+
+    fn x88p_set(&mut self, parameter: u8, value: u8) -> Result<()> {
+        self.send_x()?;
+        self.send_u8(0x9D)?;
+        self.send_u8(parameter)?;
+        self.send_u8(value)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
+    fn xs88_timer(&mut self, timer: u8, reset: bool) -> Result<u16> {
+        self.send_x()?;
+        self.send_u8(0x9E)?;
+
+        let mut param = timer & 0x0F;
+        if reset {
+            param |= 0x80;
+        }
+
+        self.send_u8(param)?;
+
+        self.xrecv_ok()?;
+        let result = self.recv_u16()?;
+
+        return Ok(result);
+    }
+
+    fn xs88_count(&mut self, timer: u8, reset: bool) -> Result<u16> {
+        self.send_x()?;
+        self.send_u8(0x9F)?;
+
+        let mut param = timer & 0x0F;
+        if reset {
+            param |= 0x80;
+        }
+
+        self.send_u8(param)?;
+
+        self.xrecv_ok()?;
+        let result = self.recv_u16()?;
+
+        return Ok(result);
+    }
+
     fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<()> {
         // get config byte from options
         let mut config: u8 = 0;

@@ -129,6 +129,13 @@ pub trait P50XBinary {
     fn xstatus(&mut self) -> Result<DeviceStatus>;
     fn xnop(&mut self) -> Result<()>;
 
+    fn xsensor(&mut self, module: u8) -> Result<[bool; 16]>;
+    fn xsens_off(&mut self) -> Result<()>;
+    fn x88p_get(&mut self, parameter: u8) -> Result<u8>;
+    fn x88p_set(&mut self, parameter: u8, value: u8) -> Result<()>;
+    fn xs88_timer(&mut self, timer: u8, reset: bool) -> Result<u16>;
+    fn xs88_count(&mut self, timer: u8, reset: bool) -> Result<u16>;
+
     fn xlok(&mut self, address: u16, speed: i8, options: XLokOptions) -> Result<()>;
     fn xlok_status(&mut self, address: u16) -> Result<XLokStatus>;
     fn xlok_config(&mut self, address: u16) -> Result<XLokConfig>;
