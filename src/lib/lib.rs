@@ -35,7 +35,7 @@ mod utils;
 pub use error::{Error, Result};
 pub use reply::P50XReply;
 pub use device::Device;
-pub use protocol::{P50XBinary, DeviceStatus, XLokOptions};
+pub use protocol::{P50XBinary, DeviceStatus, XLokOptions, XTurnoutOptions};
 pub use utils::bool_arr_to_string;
 
 #[cfg(test)]

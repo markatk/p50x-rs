@@ -142,6 +142,12 @@ pub struct XTurnoutStatus {
     pub state: bool
 }
 
+impl fmt::Display for XTurnoutStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Protocol: {:?}\nReserved: {}\nState: {:?}", self.protocol, self.reserved, self.state)
+    }
+}
+
 pub trait P50XBinary {
     fn xpower_off(&mut self) -> Result<()>;
     fn xpower_on(&mut self) -> Result<()>;
