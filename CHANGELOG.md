@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Add P50Xb sensor and turnout functions
+
+### Changes
+- Rename LokProtocol to XProtocol, because it is also used for turnouts
+
 ## [0.1.0] - 26.05.2020
 
 ### Added
