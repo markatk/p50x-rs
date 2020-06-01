@@ -458,7 +458,7 @@ impl P50XBinary for Device {
         };
 
         return Ok(XLokConfig {
-            protocol: LokProtocol::from(protocol),
+            protocol: XProtocol::from(protocol),
             speed_steps,
             virtual_address
         });
@@ -552,5 +552,82 @@ impl P50XBinary for Device {
         }
 
         return Ok(functions);
+    }
+
+    fn xturnout(&mut self, address: u16, state: bool, options: XTurnoutOptions) -> Result<()> {
+        let address_bytes = address.to_le_bytes();
+        let mut data = address_bytes[1] & 0x07;
+
+        if state {
+            data |= 0x80;
+        }
+
+        if options.status {
+            data |= 0x40;
+        }
+
+        if options.reserve {
+            data |= 0x20;
+        }
+
+        if options.no_command {
+            data |= 0x10;
+        }
+
+        self.send_x()?;
+        self.send_u8(0x90)?;
+        self.send_u8(address_bytes[0])?;
+        self.send_u8(data)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
+    fn xturnout_free(&mut self) -> Result<()> {
+        self.send_x()?;
+        self.send_u8(0x93)?;
+
+        self.xrecv_ok()?;
+
+        return Ok(());
+    }
+
+    fn xturnout_status(&mut self, address: u16) -> Result<XTurnoutStatus> {
+        self.send_x()?;
+        self.send_u8(0x94)?;
+        self.send_u16(address)?;
+
+        self.xrecv_ok()?;
+        let data = self.recv_u8()?;
+
+        let protocol = ((data & 0x01) << 1) | ((data & 0x08) >> 3);
+
+        return Ok(XTurnoutStatus {
+            protocol: XProtocol::from(protocol),
+            reserved: data & 0x02 != 0,
+            state: data & 0x04 != 0
+        });
+    }
+
+    fn xturnout_group(&mut self, group_address: u8) -> Result<[(bool, bool); 8]> {
+        self.send_x()?;
+        self.send_u8(0x95)?;
+        self.send_u8(group_address)?;
+
+        self.xrecv_ok()?;
+        let state = self.recv_u8()?;
+        let reserved = self.recv_u8()?;
+
+        let mut result = [(false, false); 8];
+
+        for i in 0..8 {
+            let current_state = state & (1 << i) != 0;
+            let current_reserved = reserved & (1 << i) != 0;
+
+            result[i] = (current_state, current_reserved);
+        }
+
+        return Ok(result);
     }
 }

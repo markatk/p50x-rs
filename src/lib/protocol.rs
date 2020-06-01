@@ -34,20 +34,20 @@ use super::utils::bool_arr_to_string;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
-pub enum LokProtocol {
+pub enum XProtocol {
     Motorola = 0,
     Selectrix = 1,
     DCC = 2,
     FMZ = 3
 }
 
-impl From<u8> for LokProtocol {
-    fn from(value: u8) -> LokProtocol {
+impl From<u8> for XProtocol {
+    fn from(value: u8) -> XProtocol {
         match value {
-            1 => LokProtocol::Selectrix,
-            2 => LokProtocol::DCC,
-            3 => LokProtocol::FMZ,
-            0 | _ => LokProtocol::Motorola
+            1 => XProtocol::Selectrix,
+            2 => XProtocol::DCC,
+            3 => XProtocol::FMZ,
+            0 | _ => XProtocol::Motorola
         }
     }
 }
@@ -107,7 +107,7 @@ impl fmt::Display for XLokStatus {
 
 #[derive(Debug, Copy, Clone)]
 pub struct XLokConfig {
-    pub protocol: LokProtocol,
+    pub protocol: XProtocol,
     pub speed_steps: u8,
     pub virtual_address: Option<u16>
 }
@@ -116,6 +116,30 @@ impl fmt::Display for XLokConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Protocol: {:?}\nSpeed steps: {}\nVirtual address: {:?}", self.protocol, self.speed_steps, self.virtual_address)
     }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct XTurnoutOptions {
+    pub status: bool,
+    pub reserve: bool,
+    pub no_command: bool
+}
+
+impl Default for XTurnoutOptions {
+    fn default() -> Self {
+        XTurnoutOptions {
+            status: true,
+            reserve: false,
+            no_command: false
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct XTurnoutStatus {
+    pub protocol: XProtocol,
+    pub reserved: bool,
+    pub state: bool
 }
 
 pub trait P50XBinary {
@@ -144,4 +168,9 @@ pub trait P50XBinary {
     fn xfunc_status(&mut self, address: u16) -> Result<[bool; 8]>;
     fn xfuncx(&mut self, address: u16, functions: [bool; 8]) -> Result<()>;
     fn xfuncx_status(&mut self, address: u16) -> Result<[bool; 8]>;
+
+    fn xturnout(&mut self, address: u16, state: bool, options: XTurnoutOptions) -> Result<()>;
+    fn xturnout_free(&mut self) -> Result<()>;
+    fn xturnout_status(&mut self, address: u16) -> Result<XTurnoutStatus>;
+    fn xturnout_group(&mut self, group_address: u8) -> Result<[(bool, bool); 8]>;
 }
