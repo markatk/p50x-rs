@@ -1,5 +1,5 @@
 /*
- * File: interactive.rs
+ * File: mod.rs
  * Date: 16.01.2022
  * Author: MarkAtk
  *
@@ -28,17 +28,46 @@
 
 use clap::{ArgMatches, App, SubCommand, Arg};
 use std::io::Write;
+use std::vec::Vec;
 
 use crate::utils::run_command;
 
+mod commands;
+
+use commands::*;
+
 pub fn run(matches: &ArgMatches) -> Result<(), String> {
+    let commands = register_commands();
+
     return run_command(matches, |device| {
         // interactive loop
         loop {
             let input = prompt("> ");
 
+            // handle special commands
             if input == "exit" {
                 break;
+            }
+
+            if input == "help" {
+                let mut keys: Vec<&String> = commands.keys().collect();
+                keys.sort();
+
+                for key in keys {
+                    println!("{}", key);
+                }
+
+                continue;
+            }
+
+            // handle registered commands
+            if let Some(callback) = commands.get(input.as_str()) {
+                match callback(&input, device) {
+                    Ok(_) => println!("Ok"),
+                    Err(err) => return Err(err)
+                };
+            } else {
+                println!("Unknown command: {}", input);
             }
         }
 
@@ -79,3 +108,5 @@ fn prompt(name: &str) -> String {
 
     return line.trim().to_string()
 }
+
+
