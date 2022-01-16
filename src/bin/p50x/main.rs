@@ -38,6 +38,7 @@ mod device;
 mod so;
 mod loco;
 mod turnout;
+mod interactive;
 
 fn run(matches: ArgMatches) -> Result<(), String> {
     match matches.subcommand() {
@@ -46,6 +47,7 @@ fn run(matches: ArgMatches) -> Result<(), String> {
         ("so", Some(m)) => so::run(m),
         ("loco", Some(m)) => loco::run(m),
         ("turnout", Some(m)) => turnout::run(m),
+        ("interactive", Some(m)) => interactive::run(m),
         _ => Ok(())
     }
 }
@@ -62,7 +64,8 @@ fn main() {
             device::command(),
             so::command(),
             loco::command(),
-            turnout::command()
+            turnout::command(),
+            interactive::command()
         ])
         .get_matches();
 
