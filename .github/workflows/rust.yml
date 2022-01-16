@@ -22,3 +22,6 @@ jobs:
                 sudo apt-get install -y libudev-dev
             - name: Build
               run: cargo build --verbose
+            - name: rust-audit-check
+              uses: actions-rs/audit-check@v1.2.0
+
