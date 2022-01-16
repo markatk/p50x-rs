@@ -1,4 +1,4 @@
-name: Rust
+name: Build
 
 on:
     push:
@@ -11,17 +11,14 @@ env:
 
 jobs:
     build:
-
         runs-on: ubuntu-latest
-
         steps:
-            - uses: actions/checkout@v2
-            - name: Install libudev
-              run: |
+          - uses: actions/checkout@v2
+            
+          - name: Install libudev
+            run: |
                 sudo apt-get update
                 sudo apt-get install -y libudev-dev
-            - name: Build
-              run: cargo build --verbose
-            - name: rust-audit-check
-              uses: actions-rs/audit-check@v1.2.0
-
+                
+          - name: Build
+            run: cargo build --verbose
